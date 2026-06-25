@@ -1,0 +1,12 @@
+# Orchestrates the whole platform. Grows service by service.
+# Principle #6: everything containerized, started with one command.
+
+services:
+  api:
+    build: ./services/api
+    container_name: rpp-api
+    ports:
+      - "8080:8080"          # host:container — reach it at localhost:8080
+    environment:
+      - API_PORT=8080
+    restart: unless-stopped
