@@ -1,0 +1,32 @@
+# ---- secrets / env (principle #5: nothing hardcoded) ----
+.env
+*.env
+!.env.example
+
+# ---- OS / editor ----
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# ---- Go (World B) ----
+/services/**/bin/
+*.exe
+*.test
+*.out
+
+# ---- Python / ROS2 (World A) ----
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+build/
+install/
+log/
+
+# ---- Node / web (World B) ----
+node_modules/
+.next/
+dist/
+*.local
