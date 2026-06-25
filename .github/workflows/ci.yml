@@ -69,3 +69,16 @@ jobs:
 
       - name: Build Docker image
         run: docker build -t rpp-api-ci services/api
+
+  robot:
+    name: Robot (ROS2)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Syntax check (compile node sources)
+        run: python3 -m compileall robot/ros2_ws/src
+
+      - name: Build ROS2 image (colcon build runs inside)
+        run: docker build -t rpp-robot-ci robot
