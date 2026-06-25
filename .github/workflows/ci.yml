@@ -57,11 +57,15 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install dependencies
-        run: pip install -r services/api/requirements.txt
+      - name: Install dependencies (with dev/test)
+        run: pip install -r services/api/requirements-dev.txt
 
       - name: Syntax check (compile all Python)
         run: python -m compileall services/api/app
+
+      - name: Run tests
+        working-directory: services/api
+        run: python -m pytest -v
 
       - name: Build Docker image
         run: docker build -t rpp-api-ci services/api
