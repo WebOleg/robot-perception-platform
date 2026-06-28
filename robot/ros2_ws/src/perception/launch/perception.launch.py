@@ -10,4 +10,10 @@ def generate_launch_description() -> LaunchDescription:
             name="detector",
             output="screen",
         ),
+        Node(
+            package="perception_cpp",
+            executable="monitor",
+            name="monitor",
+            output="screen",
+        ),
     ])
