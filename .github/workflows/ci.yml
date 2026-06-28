@@ -1,6 +1,5 @@
 name: CI
 
-# Run on every push to a branch and on every PR into main.
 on:
   push:
     branches-ignore:
@@ -82,3 +81,16 @@ jobs:
 
       - name: Build ROS2 image (colcon build runs inside)
         run: docker build -t rpp-robot-ci robot
+
+  bridge:
+    name: Bridge (seam)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Syntax check (compile bridge sources)
+        run: python3 -m compileall bridge/ros2_ws/src
+
+      - name: Build bridge image (colcon build runs inside)
+        run: docker build -t rpp-bridge-ci bridge
