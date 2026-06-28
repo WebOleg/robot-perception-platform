@@ -13,3 +13,7 @@ table { width: 100%; border-collapse: collapse; font-size: 13px; }
 th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #20242c; }
 th { color: #8b93a3; font-weight: 600; }
 tbody tr:hover { background: #161922; }
+.view { display: flex; gap: 20px; align-items: flex-start; }
+.frame { flex: 0 0 auto; }
+.frame img { max-width: 420px; border-radius: 10px; border: 1px solid #2a2e38; display: block; }
+.view table { flex: 1; }

@@ -34,6 +34,7 @@ services:
     command: ros2 launch perception perception.launch.py
     environment:
       ROS_DOMAIN_ID: 0
+      USE_SEG: "1"
     restart: unless-stopped
 
   bridge:
@@ -48,9 +49,21 @@ services:
       - robot
     restart: unless-stopped
 
+  # Heavy media path (ADR 0001): serves the latest annotated frame over HTTP.
+  frame:
+    build: ./frame-service
+    container_name: rpp-frame
+    ports:
+      - "8090:8090"
+    environment:
+      ROS_DOMAIN_ID: 0
+      FRAME_PORT: 8090
+    depends_on:
+      - robot
+    restart: unless-stopped
+
   # Gazebo simulation. Heavy; runs ONLY when explicitly requested:
   #   docker compose --profile sim up sim
-  # Publishes camera frames to the /camera ROS2 topic.
   sim:
     build: ./robot/sim
     container_name: rpp-sim
