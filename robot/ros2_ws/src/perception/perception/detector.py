@@ -1,4 +1,9 @@
-"""Detector node: runs YOLO on a frame and publishes detections as JSON."""
+"""Detector node: runs YOLO on a frame and publishes detections as JSON.
+
+Publishes only when the set of detections changes from the previous frame,
+so an unchanging scene does not flood the topic and the database with
+identical records.
+"""
 import json
 import os
 
@@ -18,6 +23,7 @@ class Detector(Node):
         self.image_path = os.environ.get("SAMPLE_IMAGE", "/assets/sample.jpg")
         self.publisher = self.create_publisher(String, "detections", 10)
         self.timer = self.create_timer(1.0, self.tick)
+        self.last_fingerprint: str | None = None
         self.get_logger().info("Detector started, publishing to /detections")
 
     def tick(self) -> None:
@@ -27,25 +33,31 @@ class Detector(Node):
             return
 
         results = self.model(frame, verbose=False)[0]
-        count = 0
+        detections = []
         for box in results.boxes:
-            label = self.model.names[int(box.cls[0])]
-            confidence = float(box.conf[0])
             x1, y1, x2, y2 = box.xyxy[0].tolist()
-            detection = {
-                "label": label,
-                "confidence": round(confidence, 4),
+            detections.append({
+                "label": self.model.names[int(box.cls[0])],
+                "confidence": round(float(box.conf[0]), 4),
                 "x": round(x1, 2),
                 "y": round(y1, 2),
                 "width": round(x2 - x1, 2),
                 "height": round(y2 - y1, 2),
-            }
+            })
+
+        fingerprint = json.dumps(
+            sorted((d["label"], d["x"], d["y"]) for d in detections)
+        )
+        if fingerprint == self.last_fingerprint:
+            return
+        self.last_fingerprint = fingerprint
+
+        for detection in detections:
             msg = String()
             msg.data = json.dumps(detection)
             self.publisher.publish(msg)
-            count += 1
 
-        self.get_logger().info(f"Published {count} detections")
+        self.get_logger().info(f"Scene changed: published {len(detections)} detections")
 
 
 def main(args=None) -> None:
