@@ -1,8 +1,9 @@
-"""Detector node: runs YOLO on a frame and publishes detections as JSON.
+"""Detector node: runs YOLO on camera frames (or a fallback image).
 
-Publishes only when the set of detections changes from the previous frame,
-so an unchanging scene does not flood the topic and the database with
-identical records.
+Subscribes to /camera (sensor_msgs/Image). If frames arrive (e.g. from Gazebo),
+detection runs on the latest frame. If no camera frame is available, it falls
+back to a baked sample image so the demo always works. Publishes detections to
+/detections only when the scene changes.
 """
 import json
 import os
@@ -10,6 +11,7 @@ import os
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import String
+from sensor_msgs.msg import Image
 
 import cv2
 from ultralytics import YOLO
@@ -20,16 +22,34 @@ class Detector(Node):
         super().__init__("detector")
         model_path = os.environ.get("YOLO_MODEL", "yolov8n.pt")
         self.model = YOLO(model_path)
-        self.image_path = os.environ.get("SAMPLE_IMAGE", "/assets/sample.jpg")
+        self.fallback_path = os.environ.get("SAMPLE_IMAGE", "/assets/sample.jpg")
+        self.latest_frame = None
+
+        self.subscription = self.create_subscription(
+            Image, "camera", self.on_frame, 10
+        )
         self.publisher = self.create_publisher(String, "detections", 10)
         self.timer = self.create_timer(1.0, self.tick)
         self.last_fingerprint: str | None = None
-        self.get_logger().info("Detector started, publishing to /detections")
+        self.get_logger().info("Detector started (camera with image fallback)")
+
+    def on_frame(self, msg: Image) -> None:
+        import numpy as np
+        frame = np.frombuffer(msg.data, dtype=np.uint8).reshape(
+            msg.height, msg.width, -1
+        )
+        if frame.shape[2] >= 3:
+            frame = cv2.cvtColor(frame[:, :, :3], cv2.COLOR_RGB2BGR)
+        self.latest_frame = frame
 
     def tick(self) -> None:
-        frame = cv2.imread(self.image_path)
+        frame = self.latest_frame
+        source = "camera"
         if frame is None:
-            self.get_logger().warn(f"Cannot read image: {self.image_path}")
+            frame = cv2.imread(self.fallback_path)
+            source = "fallback"
+        if frame is None:
+            self.get_logger().warn("No frame available (camera or fallback)")
             return
 
         results = self.model(frame, verbose=False)[0]
@@ -57,7 +77,9 @@ class Detector(Node):
             msg.data = json.dumps(detection)
             self.publisher.publish(msg)
 
-        self.get_logger().info(f"Scene changed: published {len(detections)} detections")
+        self.get_logger().info(
+            f"Scene changed ({source}): published {len(detections)} detections"
+        )
 
 
 def main(args=None) -> None:
