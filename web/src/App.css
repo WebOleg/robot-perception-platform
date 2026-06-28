@@ -1,0 +1,15 @@
+:root { font-family: system-ui, sans-serif; }
+body { margin: 0; background: #0f1115; color: #e6e6e6; }
+.app { max-width: 900px; margin: 0 auto; padding: 24px; }
+header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+h1 { font-size: 20px; margin: 0; }
+.status { font-size: 12px; padding: 3px 10px; border-radius: 20px; }
+.status.ok { background: #103b2a; color: #4ade80; }
+.status.err { background: #3b1010; color: #f87171; }
+.summary { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+.chip { background: #1a1d24; border: 1px solid #2a2e38; border-radius: 8px; padding: 6px 12px; font-size: 13px; }
+.chip strong { color: #60a5fa; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #20242c; }
+th { color: #8b93a3; font-weight: 600; }
+tbody tr:hover { background: #161922; }
