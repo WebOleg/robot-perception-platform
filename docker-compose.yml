@@ -36,7 +36,7 @@ services:
   robot:
     build: ./robot
     container_name: rpp-robot
-    command: ros2 launch perception demo.launch.py
+    command: ros2 launch perception perception.launch.py
     environment:
       ROS_DOMAIN_ID: 0          # same domain so nodes discover each other
     restart: unless-stopped

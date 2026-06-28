@@ -1,23 +1,32 @@
-# World A — robot domain container.
-# Official ROS2 Humble (LTS) base: ROS2 + Python tooling preinstalled.
 FROM ros:humble-ros-base
 
-# Don't buffer Python output (logs appear immediately).
 ENV PYTHONUNBUFFERED=1
 
-# Workspace where ROS2 packages live and get built.
-WORKDIR /ros2_ws
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        python3-pip libgl1 libglib2.0-0 && \
+    rm -rf /var/lib/apt/lists/*
 
-# Copy our packages into the workspace source tree.
+RUN python3 -m pip install --no-cache-dir \
+        ultralytics==8.3.40 \
+        opencv-python-headless==4.10.0.84
+
+# Bake model weights and a sample image into the image (offline, reproducible).
+# YOLO() downloads weights into the current working dir, so cd to /assets first.
+WORKDIR /assets
+RUN python3 -c "from ultralytics import YOLO; YOLO('yolov8n.pt')"
+# ultralytics' downloader follows redirects (plain urllib does not).
+RUN python3 -c "from ultralytics.utils.downloads import safe_download; safe_download('https://ultralytics.com/images/bus.jpg', dir='/assets')" && \
+    mv /assets/bus.jpg /assets/sample.jpg
+
+ENV YOLO_MODEL=/assets/yolov8n.pt
+ENV SAMPLE_IMAGE=/assets/sample.jpg
+
+WORKDIR /ros2_ws
 COPY ros2_ws/src ./src
 
-# Build the workspace with colcon (ROS2's build tool).
-# 'source' the ROS2 environment first so colcon and deps are on PATH.
 RUN . /opt/ros/humble/setup.sh && \
     colcon build --symlink-install
 
-# Entry: source both ROS2 and our built workspace, then run whatever command is given.
-# Using a shell entrypoint so the ROS2 environment is always loaded.
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 ENTRYPOINT ["/entrypoint.sh"]
