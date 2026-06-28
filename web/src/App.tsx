@@ -13,9 +13,11 @@ type Detection = {
 };
 
 const API = import.meta.env.VITE_API_URL ?? "http://localhost:8080";
+const FRAME = import.meta.env.VITE_FRAME_URL ?? "http://localhost:8090";
 
 function App() {
   const [detections, setDetections] = useState<Detection[]>([]);
+  const [frameUrl, setFrameUrl] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -31,6 +33,13 @@ function App() {
     };
     load();
     const id = setInterval(load, 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  useEffect(() => {
+    const tick = () => setFrameUrl(`${FRAME}/frame?t=${Date.now()}`);
+    tick();
+    const id = setInterval(tick, 1000);
     return () => clearInterval(id);
   }, []);
 
@@ -56,24 +65,29 @@ function App() {
         ))}
       </section>
 
-      <table>
-        <thead>
-          <tr>
-            <th>id</th><th>label</th><th>confidence</th><th>box (x,y,w,h)</th><th>time</th>
-          </tr>
-        </thead>
-        <tbody>
-          {detections.map((d) => (
-            <tr key={d.id}>
-              <td>{d.id}</td>
-              <td>{d.label}</td>
-              <td>{(d.confidence * 100).toFixed(1)}%</td>
-              <td>{d.x}, {d.y}, {d.width}, {d.height}</td>
-              <td>{new Date(d.detected_at).toLocaleTimeString()}</td>
+      <div className="view">
+        <div className="frame">
+          {frameUrl && <img src={frameUrl} alt="annotated camera frame" />}
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th>id</th><th>label</th><th>conf</th><th>time</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {detections.map((d) => (
+              <tr key={d.id}>
+                <td>{d.id}</td>
+                <td>{d.label}</td>
+                <td>{(d.confidence * 100).toFixed(1)}%</td>
+                <td>{new Date(d.detected_at).toLocaleTimeString()}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
